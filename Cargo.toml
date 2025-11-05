@@ -1,0 +1,22 @@
+[package]
+name = "reso_examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reso-client = { git = "https://github.com/jeremeybingham/reso_client" }
+tokio = { version = "1", features = ["full"] }
+dotenv = "0.15"
+serde_json = "1.0"
+
+[lib]
+name = "reso_examples"
+path = "src/lib.rs"
+
+[[example]]
+name = "fetch_metadata"
+path = "examples/fetch_metadata.rs"
+
+[[example]]
+name = "query_properties"
+path = "examples/query_properties.rs"

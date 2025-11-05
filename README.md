@@ -1,1 +1,230 @@
-# reso_examples_beta
+# RESO Examples
+
+A modular Rust application demonstrating how to use the `reso_client` library to interact with RESO Web API servers.
+
+## Project Structure
+
+```
+reso_examples_beta/
+├── Cargo.toml              # Project configuration and dependencies
+├── .env.example            # Template for environment variables
+├── .gitignore              # Git ignore patterns
+├── reso_client-USAGE.md    # Detailed usage guide for reso_client library
+├── src/
+│   └── lib.rs              # Core library functions for RESO API interaction
+└── examples/
+    ├── fetch_metadata.rs   # Example: Fetch and save XML metadata
+    └── query_properties.rs # Example: Query property data with filters
+```
+
+## Features
+
+- **Modular Design**: Core functionality in `src/lib.rs`, runnable examples in `examples/`
+- **Environment Configuration**: Credentials loaded from `.env` file
+- **Multiple Examples**: Fetch metadata, query properties, count records
+- **Error Handling**: Comprehensive error handling with the `ResoError` type
+- **Async Support**: Built on tokio for async/await operations
+
+## Setup
+
+### 1. Install Rust
+
+If you don't have Rust installed, get it from [rustup.rs](https://rustup.rs/):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### 2. Configure Credentials
+
+Copy the example environment file and fill in your RESO API credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your credentials:
+
+```env
+RESO_BASE_URL=https://api.bridgedataoutput.com/api/v2/OData
+RESO_TOKEN=your_bearer_token_here
+RESO_DATASET_ID=your_dataset_id_here  # Optional, required by some providers
+```
+
+**Where to get credentials:**
+- Contact your MLS provider or data vendor
+- Common providers: Bridge Interactive, CoreLogic, Rapattoni, FBS (Flexmls)
+- You'll need: API base URL, bearer token, and possibly a dataset ID
+
+### 3. Build the Project
+
+```bash
+cargo build
+```
+
+## Running Examples
+
+### Fetch Metadata
+
+Fetches the XML metadata document from the RESO server and saves it to `metadata.xml`:
+
+```bash
+cargo run --example fetch_metadata
+```
+
+The metadata describes all available resources (Property, Member, Office, etc.) and their fields.
+
+### Query Properties
+
+Demonstrates various property queries with filters and field selection:
+
+```bash
+cargo run --example query_properties
+```
+
+This example shows:
+- Counting all properties
+- Counting active properties
+- Querying with field selection
+- Filtering by city
+- Filtering by price range
+- Complex multi-condition queries
+
+## Using the Library
+
+The `src/lib.rs` module provides reusable functions for common RESO API operations:
+
+```rust
+use reso_examples::{
+    load_env,
+    create_client,
+    build_query_with_select,
+    execute_query,
+    count_records,
+};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Load credentials from .env
+    load_env()?;
+
+    // Create client
+    let client = create_client()?;
+
+    // Count records
+    let count = count_records(&client, "Property", Some("City eq 'Austin'")).await?;
+    println!("Found {} properties", count);
+
+    // Query with specific fields
+    let query = build_query_with_select(
+        "Property",
+        Some("ListPrice gt 500000"),
+        &["ListingKey", "City", "ListPrice"],
+        Some(10),
+    )?;
+
+    let response = execute_query(&client, &query).await?;
+
+    // Process results
+    if let Some(records) = response["value"].as_array() {
+        for record in records {
+            println!("{}", record);
+        }
+    }
+
+    Ok(())
+}
+```
+
+## Core Functions
+
+### Client Management
+- `load_env()` - Load environment variables from .env file
+- `create_client()` - Create RESO client from environment variables
+
+### Metadata
+- `fetch_metadata(&client)` - Fetch XML metadata document
+
+### Query Building
+- `build_query(resource, filter, top)` - Build a basic query
+- `build_query_with_select(resource, filter, fields, top)` - Build query with field selection
+
+### Execution
+- `execute_query(&client, &query)` - Execute a query and get JSON response
+- `count_records(&client, resource, filter)` - Get count of matching records
+
+### Utilities
+- `print_records(&response)` - Pretty-print JSON records from response
+
+## OData Filter Examples
+
+```rust
+// Equality
+"City eq 'Austin'"
+
+// Comparison
+"ListPrice gt 500000"
+"BedroomsTotal ge 3"
+
+// Multiple conditions
+"City eq 'Austin' and ListPrice gt 500000"
+
+// OR conditions
+"City eq 'Austin' or City eq 'Dallas'"
+
+// String functions
+"startswith(City, 'San')"
+"contains(PostalCode, '78')"
+
+// Date comparison
+"ModificationTimestamp gt 2025-01-01T00:00:00Z"
+
+// Complex with parentheses
+"(City eq 'Austin' or City eq 'Dallas') and ListPrice gt 500000"
+```
+
+## Common Resources
+
+- `Property` - Real estate listings
+- `Member` - MLS members/agents
+- `Office` - MLS offices
+- `Media` - Photos and documents
+- `OpenHouse` - Open house events
+
+## Documentation
+
+For comprehensive documentation on the `reso_client` library, see:
+- [reso_client-USAGE.md](./reso_client-USAGE.md) - Complete usage guide
+- [reso_client repository](https://github.com/jeremeybingham/reso_client) - Source code
+
+## Troubleshooting
+
+### 401 Unauthorized
+- Verify your bearer token is correct
+- Check that the token hasn't expired
+- Ensure `RESO_TOKEN` is set in `.env`
+
+### 404 Not Found
+- Verify the resource name is correct (case-sensitive)
+- Check if `RESO_DATASET_ID` is required for your provider
+- Verify `RESO_BASE_URL` is correct
+
+### Connection Timeout
+- Increase timeout: `RESO_TIMEOUT=60` in `.env`
+- Check network connectivity
+- Verify the server is operational
+
+### Empty Results
+- Verify filter syntax (use `eq` not `=`)
+- Check string values are quoted: `City eq 'Austin'`
+- Test with a simpler filter
+
+## License
+
+This project is provided as-is for demonstration purposes.
+
+## Resources
+
+- [RESO Web API Specification](https://www.reso.org/reso-web-api/)
+- [OData 4.0 Documentation](https://www.odata.org/documentation/)
+- [reso_client GitHub](https://github.com/jeremeybingham/reso_client)
