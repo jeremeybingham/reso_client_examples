@@ -26,7 +26,7 @@ use axum::{
     Router,
 };
 use reso_client::ResoClient;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
@@ -567,7 +567,7 @@ fn render_property_card(property: &JsonValue) -> String {
 
     if let Some(price) = property["ListPrice"].as_f64() {
         card.push_str(&format!(
-            r#"<div class="property-price">${:,.0}</div>"#,
+            r#"<div class="property-price">${:.0}</div>"#,
             price
         ));
     }
@@ -599,38 +599,38 @@ fn render_property_card(property: &JsonValue) -> String {
         ("Property SubType", property["PropertySubType"].as_str()),
         (
             "Bedrooms",
-            property["BedroomsTotal"].as_i64().map(|v| v.to_string()),
+            property["BedroomsTotal"].as_i64().map(|v| v.to_string()).as_deref(),
         ),
         (
             "Bathrooms",
             property["BathroomsTotalInteger"]
                 .as_i64()
-                .map(|v| v.to_string()),
+                .map(|v| v.to_string()).as_deref(),
         ),
         (
             "Living Area",
             property["LivingArea"]
                 .as_f64()
-                .map(|v| format!("{:,.0} sq ft", v)),
+                .map(|v| format!("{:.0} sq ft", v)).as_deref(),
         ),
         (
             "Lot Size",
             property["LotSizeSquareFeet"]
                 .as_f64()
-                .map(|v| format!("{:,.0} sq ft", v)),
+                .map(|v| format!("{:.0} sq ft", v)).as_deref(),
         ),
         (
             "Lot Size (Acres)",
             property["LotSizeAcres"]
                 .as_f64()
-                .map(|v| format!("{:.2} acres", v)),
+                .map(|v| format!("{:.2} acres", v)).as_deref(),
         ),
-        ("Year Built", property["YearBuilt"].as_i64().map(|v| v.to_string())),
+        ("Year Built", property["YearBuilt"].as_i64().map(|v| v.to_string()).as_deref()),
         ("Listing Date", property["ListingContractDate"].as_str()),
         ("Last Modified", property["ModificationTimestamp"].as_str()),
         (
             "Photos",
-            property["PhotosCount"].as_i64().map(|v| v.to_string()),
+            property["PhotosCount"].as_i64().map(|v| v.to_string()).as_deref(),
         ),
     ];
 
