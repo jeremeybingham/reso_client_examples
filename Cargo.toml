@@ -8,6 +8,10 @@ reso-client = { git = "https://github.com/jeremeybingham/reso_client" }
 tokio = { version = "1", features = ["full"] }
 dotenv = "0.15"
 serde_json = "1.0"
+axum = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["fs", "trace"] }
 
 [lib]
 name = "reso_examples"
@@ -20,3 +24,7 @@ path = "examples/fetch_metadata.rs"
 [[example]]
 name = "query_properties"
 path = "examples/query_properties.rs"
+
+[[example]]
+name = "axum_property_search"
+path = "examples/axum_property_search.rs"
