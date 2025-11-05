@@ -591,46 +591,46 @@ fn render_property_card(property: &JsonValue) -> String {
     // Property details grid
     card.push_str(r#"<div class="property-details">"#);
 
-    let details = vec![
-        ("Listing Key", property["ListingKey"].as_str()),
-        ("Listing ID", property["ListingId"].as_str()),
-        ("MLS Status", property["MlsStatus"].as_str()),
-        ("Property Type", property["PropertyType"].as_str()),
-        ("Property SubType", property["PropertySubType"].as_str()),
+    let details: Vec<(&str, Option<String>)> = vec![
+        ("Listing Key", property["ListingKey"].as_str().map(|s| s.to_string())),
+        ("Listing ID", property["ListingId"].as_str().map(|s| s.to_string())),
+        ("MLS Status", property["MlsStatus"].as_str().map(|s| s.to_string())),
+        ("Property Type", property["PropertyType"].as_str().map(|s| s.to_string())),
+        ("Property SubType", property["PropertySubType"].as_str().map(|s| s.to_string())),
         (
             "Bedrooms",
-            property["BedroomsTotal"].as_i64().map(|v| v.to_string()).as_deref(),
+            property["BedroomsTotal"].as_i64().map(|v| v.to_string()),
         ),
         (
             "Bathrooms",
             property["BathroomsTotalInteger"]
                 .as_i64()
-                .map(|v| v.to_string()).as_deref(),
+                .map(|v| v.to_string()),
         ),
         (
             "Living Area",
             property["LivingArea"]
                 .as_f64()
-                .map(|v| format!("{:.0} sq ft", v)).as_deref(),
+                .map(|v| format!("{:.0} sq ft", v)),
         ),
         (
             "Lot Size",
             property["LotSizeSquareFeet"]
                 .as_f64()
-                .map(|v| format!("{:.0} sq ft", v)).as_deref(),
+                .map(|v| format!("{:.0} sq ft", v)),
         ),
         (
             "Lot Size (Acres)",
             property["LotSizeAcres"]
                 .as_f64()
-                .map(|v| format!("{:.2} acres", v)).as_deref(),
+                .map(|v| format!("{:.2} acres", v)),
         ),
-        ("Year Built", property["YearBuilt"].as_i64().map(|v| v.to_string()).as_deref()),
-        ("Listing Date", property["ListingContractDate"].as_str()),
-        ("Last Modified", property["ModificationTimestamp"].as_str()),
+        ("Year Built", property["YearBuilt"].as_i64().map(|v| v.to_string())),
+        ("Listing Date", property["ListingContractDate"].as_str().map(|s| s.to_string())),
+        ("Last Modified", property["ModificationTimestamp"].as_str().map(|s| s.to_string())),
         (
             "Photos",
-            property["PhotosCount"].as_i64().map(|v| v.to_string()).as_deref(),
+            property["PhotosCount"].as_i64().map(|v| v.to_string()),
         ),
     ];
 
@@ -643,7 +643,7 @@ fn render_property_card(property: &JsonValue) -> String {
                         <div class="detail-value">{}</div>
                     </div>"#,
                     label,
-                    html_escape(&val.to_string())
+                    html_escape(&val)
                 ));
             }
         }
