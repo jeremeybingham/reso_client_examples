@@ -2,6 +2,8 @@
 
 A modular Rust application demonstrating how to use the `reso_client` library to interact with RESO Web API servers.
 
+![property search image](prop_search.png "Property Search Sample")
+
 ## Project Structure
 
 ```
