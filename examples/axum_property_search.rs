@@ -115,8 +115,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(state);
 
     // Start the server
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
-    println!("🚀 Server running at http://127.0.0.1:3000");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3030").await?;
+    println!("🚀 Server running at http://127.0.0.1:3030");
     println!("   Press Ctrl+C to stop\n");
 
     axum::serve(listener, app).await?;
@@ -535,9 +535,9 @@ fn render_property_card(property: &JsonValue) -> String {
             // Build address from components if UnparsedAddress is not available
             let street_num = property["StreetNumber"].as_str().unwrap_or("");
             let street_name = property["StreetName"].as_str().unwrap_or("");
-            let city = property["City"].as_str().unwrap_or("");
-            let state = property["StateOrProvince"].as_str().unwrap_or("");
-            let zip = property["PostalCode"].as_str().unwrap_or("");
+            let _city = property["City"].as_str().unwrap_or("");
+            let _state = property["StateOrProvince"].as_str().unwrap_or("");
+            let _zip = property["PostalCode"].as_str().unwrap_or("");
 
             if !street_num.is_empty() || !street_name.is_empty() {
                 Some("")
