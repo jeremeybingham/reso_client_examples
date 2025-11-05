@@ -85,8 +85,6 @@ cargo run --example query_properties
 ```
 
 This example shows:
-- Counting all properties
-- Counting active properties
 - Querying with field selection
 - Filtering by city
 - Filtering by price range
