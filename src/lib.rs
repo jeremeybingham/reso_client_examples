@@ -7,7 +7,6 @@
 //! - Handling common use cases
 
 use reso_client::{ResoClient, QueryBuilder, Query, ResoError, JsonValue};
-use std::env;
 use std::result::Result;
 
 /// Creates a ResoClient from environment variables.
