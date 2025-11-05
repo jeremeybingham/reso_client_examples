@@ -6,22 +6,24 @@ A modular Rust application demonstrating how to use the `reso_client` library to
 
 ```
 reso_examples_beta/
-├── Cargo.toml              # Project configuration and dependencies
-├── .env.example            # Template for environment variables
-├── .gitignore              # Git ignore patterns
-├── reso_client-USAGE.md    # Detailed usage guide for reso_client library
+├── Cargo.toml                  # Project configuration and dependencies
+├── .env.example                # Template for environment variables
+├── .gitignore                  # Git ignore patterns
+├── reso_client-USAGE.md        # Detailed usage guide for reso_client library
 ├── src/
-│   └── lib.rs              # Core library functions for RESO API interaction
+│   └── lib.rs                  # Core library functions for RESO API interaction
 └── examples/
-    ├── fetch_metadata.rs   # Example: Fetch and save XML metadata
-    └── query_properties.rs # Example: Query property data with filters
+    ├── fetch_metadata.rs       # Example: Fetch and save XML metadata
+    ├── query_properties.rs     # Example: Query property data with filters
+    └── axum_property_search.rs # Example: Web service for property search
 ```
 
 ## Features
 
 - **Modular Design**: Core functionality in `src/lib.rs`, runnable examples in `examples/`
 - **Environment Configuration**: Credentials loaded from `.env` file
-- **Multiple Examples**: Fetch metadata, query properties, count records
+- **Multiple Examples**: Fetch metadata, query properties, web-based property search
+- **Web Service**: Full-featured Axum web service with search form interface
 - **Error Handling**: Comprehensive error handling with the `ResoError` type
 - **Async Support**: Built on tokio for async/await operations
 
@@ -64,7 +66,7 @@ cargo build
 
 ## Running Examples
 
-### Fetch Metadata
+### 1. Fetch Metadata
 
 Fetches the XML metadata document from the RESO server and saves it to `metadata.xml`:
 
@@ -74,7 +76,7 @@ cargo run --example fetch_metadata
 
 The metadata describes all available resources (Property, Member, Office, etc.) and their fields.
 
-### Query Properties
+### 2. Query Properties
 
 Demonstrates various property queries with filters and field selection:
 
@@ -89,6 +91,33 @@ This example shows:
 - Filtering by city
 - Filtering by price range
 - Complex multi-condition queries
+
+### 3. Axum Property Search (Web Service)
+
+A full-featured web service with a form-based interface for searching properties:
+
+```bash
+cargo run --example axum_property_search
+```
+
+Then open your browser to: **http://localhost:3030**
+
+Features:
+- Interactive search form with multiple filter options
+- Search by city, state, status, property type
+- Filter by price range, bedrooms, and bathrooms
+- Beautiful property cards with detailed information
+- Real-time search results
+- Responsive web interface
+
+Search filters available:
+- Location: City, State/Province
+- Status: Active, Pending, Closed, Expired
+- Property Type: Residential, Commercial, Land, Multi-Family
+- Price Range: Min/Max price
+- Bedrooms: Min/Max bedrooms
+- Bathrooms: Minimum bathrooms
+- Results Limit: Control number of results (max 100)
 
 ## Using the Library
 
