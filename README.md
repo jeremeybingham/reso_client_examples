@@ -250,7 +250,7 @@ For comprehensive documentation on the `reso_client` library, see:
 
 ## License
 
-This project is provided as-is for demonstration purposes.
+Licensed under the terms of the MIT license.
 
 ## Resources
 
