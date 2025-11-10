@@ -174,6 +174,8 @@ The web service includes comprehensive API documentation accessible through:
    - Used to generate client SDKs
    - Shared with API consumers for integration
 
+![swagger image](swagger.png "Swagger Sample")
+
 ## Using the Library
 
 The `src/lib.rs` module provides reusable functions for common RESO API operations:
