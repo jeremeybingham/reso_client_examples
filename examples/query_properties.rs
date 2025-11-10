@@ -18,8 +18,8 @@
 //! ```
 
 use reso_examples::{
-    load_env, create_client, build_query_with_select,
-    execute_query, print_records,
+    load_env, create_client, build_query_with_select, build_query_with_order,
+    build_query_with_pagination, execute_query, print_records,
 };
 
 #[tokio::main]
@@ -82,12 +82,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let complex_response = execute_query(&client, &complex_query).await?;
     print_records(&complex_response)?;
 
+    // Example 5: Query with ordering by price (highest first)
+    println!("Example 5: Properties ordered by price (highest to lowest)...");
+    println!("{}", "-".repeat(60));
+    let order_query = build_query_with_order(
+        "Property",
+        Some("StandardStatus eq 'Active'"),
+        "ListPrice",
+        "desc",
+        Some(5),
+    )?;
+    let order_response = execute_query(&client, &order_query).await?;
+    print_records(&order_response)?;
+
+    // Example 6: Pagination - get second page of results
+    println!("Example 6: Pagination - Second page of properties in Austin...");
+    println!("{}", "-".repeat(60));
+    println!("(Showing records 6-10 of Austin properties)");
+    let pagination_query = build_query_with_pagination(
+        "Property",
+        Some("City eq 'Austin'"),
+        &["ListingKey", "City", "ListPrice", "StandardStatus"],
+        5,  // Skip first 5
+        5,  // Take next 5
+    )?;
+    let pagination_response = execute_query(&client, &pagination_query).await?;
+    print_records(&pagination_response)?;
+
     println!("✓ All queries completed successfully!");
     println!("\nNext steps:");
     println!("  - Modify the filters to match your specific needs");
     println!("  - Add more fields to the select array");
+    println!("  - Try different ordering fields and directions");
     println!("  - Explore other resources like Member, Office, Media");
     println!("  - See reso_client-USAGE.md for more query examples");
+    println!("  - Run 'cargo run --example advanced_queries' for more advanced features");
 
     Ok(())
 }

@@ -29,3 +29,11 @@ path = "examples/query_properties.rs"
 [[example]]
 name = "axum_property_search"
 path = "examples/axum_property_search.rs"
+
+[[example]]
+name = "advanced_queries"
+path = "examples/advanced_queries.rs"
+
+[[example]]
+name = "replication_sync"
+path = "examples/replication_sync.rs"
