@@ -34,6 +34,7 @@ use utoipa::{
     IntoParams, ToSchema,
     openapi,
 };
+use utoipa_swagger_ui::SwaggerUi;
 
 // Fields we want to query and display
 const PROPERTY_FIELDS: &[&str] = &[
@@ -317,6 +318,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/", get(home_page))
         .route("/search", get(search_handler))
         .route("/openapi.json", get(openapi_spec))
+        .merge(SwaggerUi::new("/swagger-ui").url("/openapi.json", openapi::OpenApi::default()))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
@@ -324,6 +326,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3030").await?;
     println!("🚀 Server running at http://127.0.0.1:3030");
     println!("   • Web UI: http://127.0.0.1:3030");
+    println!("   • Swagger UI: http://127.0.0.1:3030/swagger-ui");
     println!("   • OpenAPI Spec: http://127.0.0.1:3030/openapi.json");
     println!("   Press Ctrl+C to stop\n");
 
