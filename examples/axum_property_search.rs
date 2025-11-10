@@ -23,13 +23,17 @@ use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse, Response},
     routing::get,
-    Router,
+    Json, Router,
 };
 use reso_client::ResoClient;
 use serde::Deserialize;
 use serde_json::Value as JsonValue;
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
+use utoipa::{
+    IntoParams, ToSchema,
+    openapi,
+};
 
 // Fields we want to query and display
 const PROPERTY_FIELDS: &[&str] = &[
@@ -61,30 +65,227 @@ const PROPERTY_FIELDS: &[&str] = &[
 #[derive(Clone)]
 struct AppState {
     client: Arc<ResoClient>,
+    openapi: Arc<openapi::OpenApi>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema, IntoParams)]
+#[into_params(parameter_in = Query)]
 struct SearchParams {
+    /// City name to filter properties
     #[serde(default)]
     city: String,
+    /// State or Province code (e.g., TX, CA)
     #[serde(default)]
     state: String,
+    /// Property status (Active, Pending, Closed, Expired)
     #[serde(default)]
     status: String,
+    /// Minimum listing price
     #[serde(default)]
     min_price: String,
+    /// Maximum listing price
     #[serde(default)]
     max_price: String,
+    /// Minimum number of bedrooms
     #[serde(default)]
     min_beds: String,
+    /// Maximum number of bedrooms
     #[serde(default)]
     max_beds: String,
+    /// Minimum number of bathrooms
     #[serde(default)]
     min_baths: String,
+    /// Property type (Residential, Commercial, Land, Multi-Family)
     #[serde(default)]
     property_type: String,
+    /// Maximum number of results to return (default: 10, max: 100)
     #[serde(default)]
     limit: String,
+}
+
+/// Creates the OpenAPI specification for the API
+fn create_openapi_spec() -> openapi::OpenApi {
+    use utoipa::openapi::{*, path::*};
+
+    let mut openapi = OpenApiBuilder::new()
+        .info(
+            InfoBuilder::new()
+                .title("RESO Property Search API")
+                .version("1.0.0")
+                .description(Some(
+                    "API for searching and retrieving property data using the RESO (Real Estate Standards Organization) Web API. \
+                    This service provides access to comprehensive property listings with filtering capabilities."
+                ))
+                .build()
+        )
+        .build();
+
+    // Add paths manually
+    let mut paths = PathsBuilder::new();
+
+    // GET / - Home page
+    paths = paths.path(
+        "/",
+        PathItem::new(
+            HttpMethod::Get,
+            OperationBuilder::new()
+                .tag("UI")
+                .summary(Some("Home Page".to_string()))
+                .description(Some("Returns an HTML form for searching properties".to_string()))
+                .response(
+                    "200",
+                    ResponseBuilder::new()
+                        .description("HTML search form")
+                        .content(
+                            "text/html",
+                            ContentBuilder::new()
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        )
+    );
+
+    // GET /search - Property search
+    let mut search_op = OperationBuilder::new()
+        .tag("Properties")
+        .summary(Some("Search Properties".to_string()))
+        .description(Some(
+            "Search for properties using various filters including location, price, bedrooms, bathrooms, and property type. \
+            Returns HTML with property results or JSON if Accept header specifies application/json.".to_string()
+        ));
+
+    // Add query parameters
+    for param in vec![
+        ("city", "City name to filter properties (e.g., Austin, Dallas)"),
+        ("state", "State or Province code (e.g., TX, CA, NY)"),
+        ("status", "Property status: Active, Pending, Closed, or Expired"),
+        ("min_price", "Minimum listing price in dollars"),
+        ("max_price", "Maximum listing price in dollars"),
+        ("min_beds", "Minimum number of bedrooms"),
+        ("max_beds", "Maximum number of bedrooms"),
+        ("min_baths", "Minimum number of bathrooms"),
+        ("property_type", "Property type: Residential, Commercial, Land, or Multi-Family"),
+        ("limit", "Maximum number of results to return (default: 10, max: 100)"),
+    ] {
+        search_op = search_op.parameter(
+            ParameterBuilder::new()
+                .name(param.0)
+                .parameter_in(ParameterIn::Query)
+                .description(Some(param.1.to_string()))
+                .required(Required::False)
+                .build()
+        );
+    }
+
+    search_op = search_op.response(
+        "200",
+        ResponseBuilder::new()
+            .description("HTML page with search results or property data")
+            .content(
+                "text/html",
+                ContentBuilder::new()
+                    .build()
+            )
+            .build()
+    );
+
+    paths = paths.path("/search", PathItem::new(HttpMethod::Get, search_op.build()));
+
+    // GET /openapi.json - OpenAPI spec
+    paths = paths.path(
+        "/openapi.json",
+        PathItem::new(
+            HttpMethod::Get,
+            OperationBuilder::new()
+                .tag("Documentation")
+                .summary(Some("OpenAPI Specification".to_string()))
+                .description(Some("Returns the OpenAPI 3.0 specification for this API in JSON format".to_string()))
+                .response(
+                    "200",
+                    ResponseBuilder::new()
+                        .description("OpenAPI specification")
+                        .content(
+                            "application/json",
+                            ContentBuilder::new()
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        )
+    );
+
+    openapi.paths = paths.build();
+
+    // Add schemas for RESO Property resource
+    let mut components = ComponentsBuilder::new();
+
+    // Build property schema with all field descriptions
+    let mut property_builder = ObjectBuilder::new()
+        .description(Some("RESO Property resource representing a real estate listing with comprehensive property information from the RESO Web API".to_string()));
+
+    // Define all property fields with descriptions
+    let field_descriptions = vec![
+        ("ListingKey", "Unique listing identifier"),
+        ("ListingId", "Alternative listing ID"),
+        ("StandardStatus", "Property status (Active, Pending, Closed, Expired)"),
+        ("MlsStatus", "MLS-specific status"),
+        ("ListPrice", "Listing price in dollars"),
+        ("UnparsedAddress", "Complete address as a single string"),
+        ("City", "City name"),
+        ("StateOrProvince", "State or Province code"),
+        ("PostalCode", "ZIP or postal code"),
+        ("PropertyType", "Type of property (Residential, Commercial, Land, Multi-Family)"),
+        ("PropertySubType", "Specific subtype of the property"),
+        ("BedroomsTotal", "Total number of bedrooms"),
+        ("BathroomsTotalInteger", "Total number of bathrooms"),
+        ("LivingArea", "Living area in square feet"),
+        ("LotSizeSquareFeet", "Lot size in square feet"),
+        ("LotSizeAcres", "Lot size in acres"),
+        ("YearBuilt", "Year the property was built"),
+        ("ListingContractDate", "Date when the listing contract was signed"),
+        ("ModificationTimestamp", "Last modification timestamp"),
+        ("PhotosCount", "Number of photos available for this property"),
+        ("PublicRemarks", "Public description and remarks about the property"),
+    ];
+
+    for (field_name, description) in field_descriptions {
+        property_builder = property_builder.property(
+            field_name,
+            ObjectBuilder::new()
+                .description(Some(description.to_string()))
+                .build()
+        );
+    }
+
+    let property_schema = property_builder.build();
+
+    components = components.schema("Property", RefOr::T(Schema::Object(property_schema)));
+    openapi.components = Some(components.build());
+
+    // Add tags
+    openapi.tags = Some(vec![
+        Tag::new("UI"),
+        Tag::new("Properties"),
+        Tag::new("Documentation"),
+    ]);
+
+    // Add server
+    openapi.servers = Some(vec![
+        ServerBuilder::new()
+            .url("http://127.0.0.1:3030")
+            .description(Some("Local development server".to_string()))
+            .build()
+    ]);
+
+    openapi
+}
+
+/// Handler to serve the OpenAPI specification
+async fn openapi_spec(State(state): State<AppState>) -> Json<openapi::OpenApi> {
+    Json((*state.openapi).clone())
 }
 
 #[tokio::main]
@@ -102,21 +303,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = reso_examples::create_client()?;
     println!("✓ Client created successfully\n");
 
+    // Build OpenAPI spec
+    let openapi = create_openapi_spec();
+
     // Create shared state
     let state = AppState {
         client: Arc::new(client),
+        openapi: Arc::new(openapi),
     };
 
     // Build the router
     let app = Router::new()
         .route("/", get(home_page))
         .route("/search", get(search_handler))
+        .route("/openapi.json", get(openapi_spec))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     // Start the server
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3030").await?;
     println!("🚀 Server running at http://127.0.0.1:3030");
+    println!("   • Web UI: http://127.0.0.1:3030");
+    println!("   • OpenAPI Spec: http://127.0.0.1:3030/openapi.json");
     println!("   Press Ctrl+C to stop\n");
 
     axum::serve(listener, app).await?;
