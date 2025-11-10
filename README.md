@@ -30,6 +30,8 @@ reso_examples_beta/
 - **Advanced Query Features**: Key-based lookups, ordering, pagination, entity expansion
 - **Bulk Data Replication**: Support for large-scale data synchronization
 - **Web Service**: Full-featured Axum web service with search form interface
+- **OpenAPI 3.0 Support**: Auto-generated OpenAPI specification for API documentation
+- **Swagger UI**: Interactive API documentation and testing interface
 - **Error Handling**: Comprehensive error handling with the `ResoError` type
 - **Async Support**: Built on tokio for async/await operations
 
@@ -132,7 +134,11 @@ A full-featured web service with a form-based interface for searching properties
 cargo run --example axum_property_search
 ```
 
-Then open your browser to: **http://localhost:3030**
+Then open your browser to one of these endpoints:
+
+- **Web UI**: http://localhost:3030
+- **Swagger UI**: http://localhost:3030/swagger-ui
+- **OpenAPI Spec**: http://localhost:3030/openapi.json
 
 Features:
 - Interactive search form with multiple filter options
@@ -141,6 +147,8 @@ Features:
 - Beautiful property cards with detailed information
 - Real-time search results
 - Responsive web interface
+- **OpenAPI 3.0 specification** - Auto-generated API documentation
+- **Swagger UI** - Interactive API explorer and testing interface
 
 Search filters available:
 - Location: City, State/Province
@@ -150,6 +158,21 @@ Search filters available:
 - Bedrooms: Min/Max bedrooms
 - Bathrooms: Minimum bathrooms
 - Results Limit: Control number of results (max 100)
+
+#### API Documentation
+
+The web service includes comprehensive API documentation accessible through:
+
+1. **Swagger UI** (`/swagger-ui`): An interactive interface where you can:
+   - Browse all available endpoints
+   - View request/response schemas
+   - Test API endpoints directly from your browser
+   - See detailed parameter descriptions
+
+2. **OpenAPI Specification** (`/openapi.json`): A complete OpenAPI 3.0 specification that can be:
+   - Imported into API tools like Postman or Insomnia
+   - Used to generate client SDKs
+   - Shared with API consumers for integration
 
 ## Using the Library
 
