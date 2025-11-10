@@ -23,7 +23,7 @@ use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse, Response},
     routing::get,
-    Json, Router,
+    Router,
 };
 use reso_client::ResoClient;
 use serde::Deserialize;
@@ -66,7 +66,6 @@ const PROPERTY_FIELDS: &[&str] = &[
 #[derive(Clone)]
 struct AppState {
     client: Arc<ResoClient>,
-    openapi: Arc<openapi::OpenApi>,
 }
 
 #[derive(Debug, Deserialize, ToSchema, IntoParams)]
@@ -284,11 +283,6 @@ fn create_openapi_spec() -> openapi::OpenApi {
     openapi
 }
 
-/// Handler to serve the OpenAPI specification
-async fn openapi_spec(State(state): State<AppState>) -> Json<openapi::OpenApi> {
-    Json((*state.openapi).clone())
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables
@@ -310,15 +304,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create shared state
     let state = AppState {
         client: Arc::new(client),
-        openapi: Arc::new(openapi),
     };
 
     // Build the router
     let app = Router::new()
         .route("/", get(home_page))
         .route("/search", get(search_handler))
-        .route("/openapi.json", get(openapi_spec))
-        .merge(SwaggerUi::new("/swagger-ui").url("/openapi.json", openapi::OpenApi::default()))
+        .merge(SwaggerUi::new("/swagger-ui").url("/openapi.json", openapi.clone()))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
