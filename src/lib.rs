@@ -6,7 +6,7 @@
 //! - Building and executing queries
 //! - Handling common use cases
 
-use reso_client::{ResoClient, QueryBuilder, Query, ResoError, JsonValue};
+use reso_client::{ResoClient, QueryBuilder, Query, ResoError, JsonValue, ReplicationQueryBuilder, ReplicationQuery, ReplicationResponse};
 use std::result::Result;
 
 /// Creates a ResoClient from environment variables.
@@ -274,6 +274,247 @@ pub fn print_records(response: &JsonValue) -> Result<(), Box<dyn std::error::Err
     Ok(())
 }
 
+/// Builds a query for a single record by key.
+///
+/// This is more efficient than using a filter for single-record lookups.
+///
+/// # Arguments
+///
+/// * `resource` - The resource name (e.g., "Property", "Member", "Office")
+/// * `key` - The key value to look up
+/// * `fields` - Optional array of field names to select
+///
+/// # Example
+///
+/// ```no_run
+/// use reso_examples::build_query_by_key;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let query = build_query_by_key("Property", "12345", Some(&["ListingKey", "City", "ListPrice"]))?;
+/// # Ok(())
+/// # }
+/// ```
+pub fn build_query_by_key(
+    resource: &str,
+    key: &str,
+    fields: Option<&[&str]>,
+) -> Result<Query, ResoError> {
+    let mut builder = QueryBuilder::by_key(resource, key);
+
+    if let Some(field_list) = fields {
+        builder = builder.select(field_list);
+    }
+
+    builder.build()
+}
+
+/// Builds a query with ordering.
+///
+/// # Arguments
+///
+/// * `resource` - The resource name (e.g., "Property", "Member", "Office")
+/// * `filter` - Optional OData filter expression
+/// * `order_field` - Field name to order by
+/// * `direction` - Sort direction ("asc" or "desc")
+/// * `top` - Optional limit on number of results
+///
+/// # Example
+///
+/// ```no_run
+/// use reso_examples::build_query_with_order;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let query = build_query_with_order(
+///     "Property",
+///     Some("City eq 'Austin'"),
+///     "ListPrice",
+///     "desc",
+///     Some(10)
+/// )?;
+/// # Ok(())
+/// # }
+/// ```
+pub fn build_query_with_order(
+    resource: &str,
+    filter: Option<&str>,
+    order_field: &str,
+    direction: &str,
+    top: Option<u32>,
+) -> Result<Query, ResoError> {
+    let mut builder = QueryBuilder::new(resource);
+
+    if let Some(filter_expr) = filter {
+        builder = builder.filter(filter_expr);
+    }
+
+    builder = builder.order_by(order_field, direction);
+
+    if let Some(limit) = top {
+        builder = builder.top(limit);
+    }
+
+    builder.build()
+}
+
+/// Builds a query with pagination support.
+///
+/// # Arguments
+///
+/// * `resource` - The resource name (e.g., "Property", "Member", "Office")
+/// * `filter` - Optional OData filter expression
+/// * `fields` - Array of field names to select
+/// * `skip` - Number of records to skip (for pagination)
+/// * `top` - Number of records to return
+///
+/// # Example
+///
+/// ```no_run
+/// use reso_examples::build_query_with_pagination;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// // Get second page of 10 results
+/// let query = build_query_with_pagination(
+///     "Property",
+///     Some("City eq 'Austin'"),
+///     &["ListingKey", "City", "ListPrice"],
+///     10,  // Skip first 10
+///     10   // Take next 10
+/// )?;
+/// # Ok(())
+/// # }
+/// ```
+pub fn build_query_with_pagination(
+    resource: &str,
+    filter: Option<&str>,
+    fields: &[&str],
+    skip: u32,
+    top: u32,
+) -> Result<Query, ResoError> {
+    let mut builder = QueryBuilder::new(resource);
+
+    if let Some(filter_expr) = filter {
+        builder = builder.filter(filter_expr);
+    }
+
+    builder = builder.select(fields).skip(skip).top(top);
+
+    builder.build()
+}
+
+/// Builds a query with expanded related entities.
+///
+/// # Arguments
+///
+/// * `resource` - The resource name (e.g., "Property", "Member", "Office")
+/// * `filter` - Optional OData filter expression
+/// * `fields` - Array of field names to select
+/// * `expand` - Array of navigation properties to expand
+/// * `top` - Optional limit on number of results
+///
+/// # Example
+///
+/// ```no_run
+/// use reso_examples::build_query_with_expand;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let query = build_query_with_expand(
+///     "Property",
+///     Some("City eq 'Austin'"),
+///     &["ListingKey", "City", "ListPrice"],
+///     &["ListOffice", "ListAgent"],
+///     Some(10)
+/// )?;
+/// # Ok(())
+/// # }
+/// ```
+pub fn build_query_with_expand(
+    resource: &str,
+    filter: Option<&str>,
+    fields: &[&str],
+    expand: &[&str],
+    top: Option<u32>,
+) -> Result<Query, ResoError> {
+    let mut builder = QueryBuilder::new(resource);
+
+    if let Some(filter_expr) = filter {
+        builder = builder.filter(filter_expr);
+    }
+
+    builder = builder.select(fields).expand(expand);
+
+    if let Some(limit) = top {
+        builder = builder.top(limit);
+    }
+
+    builder.build()
+}
+
+/// Builds a replication query for bulk data synchronization.
+///
+/// # Arguments
+///
+/// * `resource` - The resource name (e.g., "Property", "Member", "Office")
+/// * `filter` - Optional OData filter expression
+///
+/// # Example
+///
+/// ```no_run
+/// use reso_examples::build_replication_query;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let query = build_replication_query("Property", Some("StandardStatus eq 'Active'"))?;
+/// # Ok(())
+/// # }
+/// ```
+pub fn build_replication_query(
+    resource: &str,
+    filter: Option<&str>,
+) -> Result<ReplicationQuery, ResoError> {
+    let mut builder = ReplicationQueryBuilder::new(resource);
+
+    if let Some(filter_expr) = filter {
+        builder = builder.filter(filter_expr);
+    }
+
+    builder.build()
+}
+
+/// Executes a replication query and returns the response.
+///
+/// # Arguments
+///
+/// * `client` - A reference to a configured ResoClient
+/// * `query` - A reference to the replication query to execute
+///
+/// # Returns
+///
+/// Returns a ReplicationResponse containing records and pagination token.
+///
+/// # Example
+///
+/// ```no_run
+/// use reso_examples::{create_client, build_replication_query, execute_replication_query};
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let client = create_client()?;
+///     let query = build_replication_query("Property", None)?;
+///     let response = execute_replication_query(&client, &query).await?;
+///
+///     println!("Retrieved {} records", response.records.len());
+///     if let Some(link) = &response.next_link {
+///         println!("More records available with link: {}", link);
+///     }
+///     Ok(())
+/// }
+/// ```
+pub async fn execute_replication_query(
+    client: &ResoClient,
+    query: &ReplicationQuery,
+) -> Result<ReplicationResponse, ResoError> {
+    client.execute_replication(query).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -298,6 +539,54 @@ mod tests {
             &["ListingKey", "City", "ListPrice"],
             Some(10),
         );
+        assert!(query.is_ok());
+    }
+
+    #[test]
+    fn test_build_query_by_key() {
+        let query = build_query_by_key("Property", "12345", Some(&["ListingKey", "City"]));
+        assert!(query.is_ok());
+    }
+
+    #[test]
+    fn test_build_query_with_order() {
+        let query = build_query_with_order(
+            "Property",
+            Some("City eq 'Austin'"),
+            "ListPrice",
+            "desc",
+            Some(10),
+        );
+        assert!(query.is_ok());
+    }
+
+    #[test]
+    fn test_build_query_with_pagination() {
+        let query = build_query_with_pagination(
+            "Property",
+            Some("City eq 'Austin'"),
+            &["ListingKey", "City", "ListPrice"],
+            10,
+            10,
+        );
+        assert!(query.is_ok());
+    }
+
+    #[test]
+    fn test_build_query_with_expand() {
+        let query = build_query_with_expand(
+            "Property",
+            Some("City eq 'Austin'"),
+            &["ListingKey", "City"],
+            &["ListOffice", "ListAgent"],
+            Some(10),
+        );
+        assert!(query.is_ok());
+    }
+
+    #[test]
+    fn test_build_replication_query() {
+        let query = build_replication_query("Property", Some("StandardStatus eq 'Active'"));
         assert!(query.is_ok());
     }
 }

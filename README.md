@@ -17,6 +17,8 @@ reso_examples_beta/
 └── examples/
     ├── fetch_metadata.rs       # Example: Fetch and save XML metadata
     ├── query_properties.rs     # Example: Query property data with filters
+    ├── advanced_queries.rs     # Example: Advanced features (key lookup, expand)
+    ├── replication_sync.rs     # Example: Bulk data replication
     └── axum_property_search.rs # Example: Web service for property search
 ```
 
@@ -24,7 +26,9 @@ reso_examples_beta/
 
 - **Modular Design**: Core functionality in `src/lib.rs`, runnable examples in `examples/`
 - **Environment Configuration**: Credentials loaded from `.env` file
-- **Multiple Examples**: Fetch metadata, query properties, web-based property search
+- **Multiple Examples**: Fetch metadata, query properties, advanced queries, replication, web-based search
+- **Advanced Query Features**: Key-based lookups, ordering, pagination, entity expansion
+- **Bulk Data Replication**: Support for large-scale data synchronization
 - **Web Service**: Full-featured Axum web service with search form interface
 - **Error Handling**: Comprehensive error handling with the `ResoError` type
 - **Async Support**: Built on tokio for async/await operations
@@ -92,7 +96,35 @@ This example shows:
 - Filtering by price range
 - Complex multi-condition queries
 
-### 3. Axum Property Search (Web Service)
+### 3. Advanced Queries
+
+Demonstrates advanced query features like key-based lookups and expanding related entities:
+
+```bash
+cargo run --example advanced_queries
+```
+
+This example shows:
+- Direct key-based record lookups (more efficient than filtering)
+- Expanding related entities (if supported by your server)
+- Combining multiple query features (filters, ordering, limits)
+- Understanding server capability limitations
+
+### 4. Replication Sync
+
+Demonstrates bulk data synchronization using replication endpoints:
+
+```bash
+cargo run --example replication_sync
+```
+
+This example shows:
+- Building replication queries for bulk data transfer
+- Understanding pagination with next_link tokens
+- Handling servers that may not support replication
+- Best practices for large dataset synchronization
+
+### 5. Axum Property Search (Web Service)
 
 A full-featured web service with a form-based interface for searching properties:
 
@@ -177,9 +209,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Query Building
 - `build_query(resource, filter, top)` - Build a basic query
 - `build_query_with_select(resource, filter, fields, top)` - Build query with field selection
+- `build_query_by_key(resource, key, fields)` - Build query for direct key-based lookup
+- `build_query_with_order(resource, filter, order_field, direction, top)` - Build query with ordering
+- `build_query_with_pagination(resource, filter, fields, skip, top)` - Build query with pagination
+- `build_query_with_expand(resource, filter, fields, expand, top)` - Build query with expanded entities
+- `build_replication_query(resource, filter)` - Build replication query for bulk data
 
 ### Execution
 - `execute_query(&client, &query)` - Execute a query and get JSON response
+- `execute_replication_query(&client, &query)` - Execute replication query
 - `count_records(&client, resource, filter)` - Get count of matching records
 
 ### Utilities
